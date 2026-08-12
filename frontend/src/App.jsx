@@ -15,8 +15,9 @@ function App() {
   const [callHistory, setCallHistory] = useState([]);
 
   const recognitionRef = useRef(null);
+  const chatEndRef = useRef(null);
 
-  // 🔄 Load data
+  // 🔄 Load history
   useEffect(() => {
     window.speechSynthesis.getVoices();
 
@@ -41,7 +42,17 @@ function App() {
           ])
           .flat();
 
-        setMessages(formatted);
+        if (formatted.length === 0) {
+          setMessages([
+            {
+              sender: "ai",
+              text: "👋 Hello Sai! Nenu Tara, nee smart Telugu AI assistant. Nenu voice assistant, call assistant, GATE helper, college helper, coding helper ga help chesthanu 🚀",
+              time: new Date().toLocaleTimeString(),
+            },
+          ]);
+        } else {
+          setMessages(formatted);
+        }
       } catch (error) {
         console.log("History load failed", error);
       }
@@ -55,6 +66,13 @@ function App() {
     }
   }, []);
 
+  // 🔽 Auto scroll
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages]);
+
   // 💾 Save calls
   useEffect(() => {
     localStorage.setItem(
@@ -63,7 +81,7 @@ function App() {
     );
   }, [callHistory]);
 
-  // 🔊 Telugu Female Voice
+  // 🔊 Female Telugu Voice
   const speakText = (text) => {
     window.speechSynthesis.cancel();
 
@@ -123,7 +141,7 @@ function App() {
     recognition.onend = () => setListening(false);
   };
 
-  // 🎙️ Continuous Voice Mode
+  // 🎙️ Voice Mode
   const startVoiceMode = () => {
     const SpeechRecognition =
       window.SpeechRecognition ||
@@ -260,6 +278,51 @@ function App() {
       console.log(error);
     }
   };
+  // 📞 Call Simulation
+const simulateCall = (caller) => {
+  setIncomingCall(caller);
+  setCallStatus("");
+};
+
+const acceptCall = () => {
+  let response = "";
+
+  if (incomingCall === "Amma") {
+    response =
+      "📢 Amma call important ga mark chesanu. Sai ki immediate notification pampisthunnanu.";
+
+  } else if (incomingCall === "Annayya") {
+    response =
+      "📢 Annayya call urgent family call ga mark chesanu.";
+
+  } else if (incomingCall === "Unknown Number") {
+    response =
+      "⚠️ Unknown number detected. Spam ayye avakasam undi.";
+
+  } else if (incomingCall === "Emergency") {
+    response =
+      "🚨 Emergency call detected! Immediate notification pampisthunnanu.";
+
+    setUrgentAlert(
+      "🚨 EMERGENCY CALL DETECTED - CHECK IMMEDIATELY!"
+    );
+  }
+
+  setCallStatus(response);
+
+  setCallHistory((prev) => [
+    {
+      caller: incomingCall,
+      status: "Accepted",
+      time: new Date().toLocaleTimeString(),
+    },
+    ...prev,
+  ]);
+
+  speakText(response);
+
+  setIncomingCall("");
+};
 
   return (
     <div
@@ -285,6 +348,7 @@ function App() {
           borderRadius: "20px",
         }}
       >
+        {/* 💬 Chat Area */}
         <div
           style={{
             height: "400px",
@@ -295,47 +359,38 @@ function App() {
             marginBottom: "15px",
           }}
         >
-          {messages.length === 0 ? (
+          {messages.map((msg, index) => (
             <div
+              key={index}
               style={{
-                textAlign: "center",
-                marginTop: "150px",
-                color: "#94a3b8",
+                textAlign:
+                  msg.sender === "user"
+                    ? "right"
+                    : "left",
+                marginBottom: "10px",
               }}
             >
-              🤖 Start chatting with Tara AI...
-            </div>
-          ) : (
-            messages.map((msg, index) => (
               <div
-                key={index}
                 style={{
-                  textAlign:
+                  display: "inline-block",
+                  background:
                     msg.sender === "user"
-                      ? "right"
-                      : "left",
-                  marginBottom: "10px",
+                      ? "#2563eb"
+                      : "#1e293b",
+                  padding: "10px 14px",
+                  borderRadius: "14px",
+                  maxWidth: "70%",
                 }}
               >
-                <div
-                  style={{
-                    display: "inline-block",
-                    background:
-                      msg.sender === "user"
-                        ? "#2563eb"
-                        : "#1e293b",
-                    padding: "10px 14px",
-                    borderRadius: "14px",
-                    maxWidth: "70%",
-                  }}
-                >
-                  {msg.text}
-                </div>
+                {msg.text}
               </div>
-            ))
-          )}
+            </div>
+          ))}
+
+          <div ref={chatEndRef}></div>
         </div>
 
+        {/* ⌨️ Input */}
         <div
           style={{
             display: "flex",
@@ -343,6 +398,21 @@ function App() {
             flexWrap: "wrap",
           }}
         >
+          {/* ⚡ Quick Actions */}
+<div
+  style={{
+    display: "flex",
+    gap: "10px",
+    flexWrap: "wrap",
+    marginBottom: "15px",
+  }}
+>
+  <button onClick={() => setMessage("weather")}>🌤 Weather</button>
+  <button onClick={() => setMessage("time")}>🕒 Time</button>
+  <button onClick={() => setMessage("date")}>📅 Date</button>
+  <button onClick={() => setMessage("sai ai project")}>🤖 Project</button>
+  <button onClick={() => setMessage("motivate me")}>💪 Motivate</button>
+</div>
           <input
             type="text"
             placeholder="Ask Tara anything..."
@@ -431,6 +501,81 @@ function App() {
             🔊 Tara is speaking...
           </p>
         )}
+        {/* 📞 Call Simulation */}
+<div
+  style={{
+    marginTop: "24px",
+    background: "#111827",
+    borderRadius: "16px",
+    padding: "20px",
+  }}
+>
+  <h3>📞 Call Simulation</h3>
+
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+      flexWrap: "wrap",
+    }}
+  >
+    <button onClick={() => simulateCall("Amma")}>
+      👩 Amma
+    </button>
+
+    <button onClick={() => simulateCall("Annayya")}>
+      👨 Annayya
+    </button>
+
+    <button onClick={() => simulateCall("Unknown Number")}>
+      ❓ Unknown
+    </button>
+
+    <button onClick={() => simulateCall("Emergency")}>
+      🚨 Emergency
+    </button>
+  </div>
+
+  {incomingCall && (
+    <div style={{ marginTop: "15px" }}>
+      <p>
+        📲 Incoming Call: <strong>{incomingCall}</strong>
+      </p>
+
+      <button onClick={acceptCall}>
+        ✅ Accept
+      </button>
+    </div>
+  )}
+
+  {callStatus && (
+    <div
+      style={{
+        marginTop: "15px",
+        background: "#0f172a",
+        padding: "12px",
+        borderRadius: "12px",
+      }}
+    >
+      {callStatus}
+    </div>
+  )}
+
+  {urgentAlert && (
+    <div
+      style={{
+        marginTop: "15px",
+        background: "#7f1d1d",
+        color: "#fecaca",
+        padding: "12px",
+        borderRadius: "12px",
+        fontWeight: "bold",
+      }}
+    >
+      {urgentAlert}
+    </div>
+  )}
+</div>
       </div>
     </div>
   );
