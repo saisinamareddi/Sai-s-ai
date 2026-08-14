@@ -8,7 +8,6 @@ import os
 
 app = FastAPI()
 
-# 📁 Chat history file
 CHAT_FILE = "chat_history.json"
 
 # 🌐 CORS
@@ -20,11 +19,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 📩 Request model
+# =========================
+# MODELS
+# =========================
+
 class ChatRequest(BaseModel):
     message: str
 
-# 📁 Save chat history
+
+class CallRequest(BaseModel):
+    caller: str
+    reason: str = "busy"
+
+
+# =========================
+# CHAT HISTORY
+# =========================
+
 def save_chat(user_message, ai_reply):
     history = []
 
@@ -44,21 +55,28 @@ def save_chat(user_message, ai_reply):
     with open(CHAT_FILE, "w", encoding="utf-8") as f:
         json.dump(history, f, ensure_ascii=False, indent=2)
 
-# 🏠 Home route
+
+# =========================
+# HOME
+# =========================
+
 @app.get("/")
 def home():
     return {
         "status": "Sai AI backend running 🚀",
-        "chat_history_file": CHAT_FILE
+        "time": datetime.now().strftime("%I:%M %p")
     }
 
-# 💬 Main chat route
+
+# =========================
+# CHAT API
+# =========================
+
 @app.post("/chat")
 async def chat(data: ChatRequest):
     try:
         ai_reply = ask_ai(data.message)
 
-        # Save conversation
         save_chat(data.message, ai_reply)
 
         return {
@@ -73,7 +91,11 @@ async def chat(data: ChatRequest):
             "success": False
         }
 
-# 📜 Get all chat history
+
+# =========================
+# HISTORY
+# =========================
+
 @app.get("/history")
 def get_history():
     if os.path.exists(CHAT_FILE):
@@ -85,10 +107,61 @@ def get_history():
 
     return []
 
-# 🗑️ Clear history
+
 @app.delete("/history")
 def clear_history():
     if os.path.exists(CHAT_FILE):
         os.remove(CHAT_FILE)
 
-    return {"message": "🗑️ Chat history cleared successfully"}
+    return {"message": "🗑️ Chat history cleared"}
+
+
+# =========================
+# SMART CALL ASSISTANT
+# =========================
+
+@app.post("/call-assistant")
+async def call_assistant(data: CallRequest):
+
+    caller = data.caller.lower()
+    urgent = False
+
+    if "amma" in caller:
+        reply = (
+            "Amma, Sai ippudu busy ga unnadu. "
+            "Mee call important ga note chesanu. "
+            "Konchem tarvata malli call chesthadu."
+        )
+
+    elif "annayya" in caller:
+        reply = (
+            "Annayya, Sai meeting lo unnadu. "
+            "Mee message nenu note chesanu."
+        )
+
+    elif "emergency" in caller:
+        reply = (
+            "🚨 Emergency call detect ayyindi. "
+            "Sai ni immediate ga alert chesthunnanu."
+        )
+        urgent = True
+
+    elif "unknown" in caller:
+        reply = (
+            "Hello, meeru evaru? "
+            "Sai ippudu available ledu. "
+            "Mee peru mariyu reason cheppandi."
+        )
+
+    else:
+        reply = (
+            f"Hello {data.caller}, Sai ippudu busy ga unnadu. "
+            "Mee call note chesanu."
+        )
+
+    return {
+        "caller": data.caller,
+        "reply": reply,
+        "urgent": urgent,
+        "time": datetime.now().strftime("%I:%M %p")
+    }

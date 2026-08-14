@@ -25,7 +25,7 @@ function App() {
     const loadHistory = async () => {
       try {
         const response = await axios.get(
-          "http://127.0.0.1:8001/history"
+          "${API_BASE}/history"
         );
 
         const formatted = response.data
@@ -179,7 +179,7 @@ function App() {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8001/chat",
+          "${API_BASE}/chat",
           { message: spoken }
         );
 
@@ -234,7 +234,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8001/chat",
+        "${API_BASE}/chat",
         { message: userMessage }
       );
 
@@ -273,7 +273,7 @@ function App() {
 
     try {
       await axios.delete(
-        "http://127.0.0.1:8001/history"
+        "${API_BASE}/history"
       );
     } catch (error) {
       console.log(error);
@@ -289,7 +289,7 @@ const simulateCall = (caller) => {
 const acceptCall = async () => {
   try {
     const response = await axios.post(
-      "http://127.0.0.1:8001/call-assistant",
+      "${API_BASE}/call-assistant",
       {
         caller: incomingCall,
         reason: "family call",
