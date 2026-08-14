@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import API_BASE from "./config";
 
 function App() {
   const [message, setMessage] = useState("");
@@ -24,7 +25,7 @@ function App() {
     const loadHistory = async () => {
       try {
         const response = await axios.get(
-          "http://127.0.0.1:8000/history"
+          "http://127.0.0.1:8001/history"
         );
 
         const formatted = response.data
@@ -178,7 +179,7 @@ function App() {
 
       try {
         const response = await axios.post(
-          "http://127.0.0.1:8000/chat",
+          "http://127.0.0.1:8001/chat",
           { message: spoken }
         );
 
@@ -233,7 +234,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://127.0.0.1:8000/chat",
+        "http://127.0.0.1:8001/chat",
         { message: userMessage }
       );
 
@@ -272,311 +273,543 @@ function App() {
 
     try {
       await axios.delete(
-        "http://127.0.0.1:8000/history"
+        "http://127.0.0.1:8001/history"
       );
     } catch (error) {
       console.log(error);
     }
   };
   // 📞 Call Simulation
+// 📞 Call Simulation
 const simulateCall = (caller) => {
   setIncomingCall(caller);
   setCallStatus("");
 };
 
-const acceptCall = () => {
-  let response = "";
-
-  if (incomingCall === "Amma") {
-    response =
-      "📢 Amma call important ga mark chesanu. Sai ki immediate notification pampisthunnanu.";
-
-  } else if (incomingCall === "Annayya") {
-    response =
-      "📢 Annayya call urgent family call ga mark chesanu.";
-
-  } else if (incomingCall === "Unknown Number") {
-    response =
-      "⚠️ Unknown number detected. Spam ayye avakasam undi.";
-
-  } else if (incomingCall === "Emergency") {
-    response =
-      "🚨 Emergency call detected! Immediate notification pampisthunnanu.";
-
-    setUrgentAlert(
-      "🚨 EMERGENCY CALL DETECTED - CHECK IMMEDIATELY!"
+const acceptCall = async () => {
+  try {
+    const response = await axios.post(
+      "http://127.0.0.1:8001/call-assistant",
+      {
+        caller: incomingCall,
+        reason: "family call",
+      }
     );
+
+    const aiReply = response.data.reply;
+
+    // 📞 Show status
+    setCallStatus(aiReply);
+
+    // 💬 Add to chat
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender: "ai",
+        text: `📞 Call handled from ${incomingCall}\n${aiReply}`,
+        time: new Date().toLocaleTimeString(),
+      },
+    ]);
+
+    // 🔊 Speak response
+    speakText(aiReply);
+
+    // 💾 Save call history
+    setCallHistory((prev) => [
+      {
+        caller: incomingCall,
+        status: response.data.urgent ? "🚨 Urgent" : "✅ Handled",
+        time: new Date().toLocaleTimeString(),
+      },
+      ...prev,
+    ]);
+
+    // 🚨 Emergency alert
+    if (response.data.urgent) {
+      setUrgentAlert(
+        "🚨 URGENT CALL DETECTED - CHECK IMMEDIATELY!"
+      );
+    }
+
+    // 📵 Close incoming call
+    setIncomingCall("");
+
+  } catch (error) {
+    console.error(error);
+    setCallStatus("❌ Call assistant backend error");
   }
-
-  setCallStatus(response);
-
-  setCallHistory((prev) => [
-    {
-      caller: incomingCall,
-      status: "Accepted",
-      time: new Date().toLocaleTimeString(),
-    },
-    ...prev,
-  ]);
-
-  speakText(response);
-
-  setIncomingCall("");
 };
-
-  return (
+ return (
+  
+  <div
+    style={{
+      minHeight: "100vh",
+      background:
+        "radial-gradient(circle at top left, #1e3a8a 0%, #0f172a 35%, #020617 100%)",
+      color: "white",
+      fontFamily: "Inter, Arial, sans-serif",
+      padding: "20px",
+      position: "relative",
+      overflow: "hidden",
+    }}
+  >
+    {/* ✨ Floating background circles */}
     <div
       style={{
-        minHeight: "100vh",
-        background:
-          "linear-gradient(135deg, #020617, #0f172a, #111827)",
-        color: "white",
-        fontFamily: "Arial",
-        padding: "20px",
+        position: "absolute",
+        top: "-120px",
+        right: "-120px",
+        width: "260px",
+        height: "260px",
+        borderRadius: "50%",
+        background: "rgba(59,130,246,0.18)",
+        filter: "blur(50px)",
       }}
-    >
-      <h1 style={{ textAlign: "center" }}>
-        🤖 Sai AI
-      </h1>
+    />
 
-      <div
-        style={{
-          maxWidth: "900px",
-          margin: "20px auto",
-          background: "#111827",
-          padding: "20px",
-          borderRadius: "20px",
-        }}
-      >
-        {/* 💬 Chat Area */}
-        <div
-          style={{
-            height: "400px",
-            overflowY: "auto",
-            background: "#0f172a",
-            borderRadius: "12px",
-            padding: "15px",
-            marginBottom: "15px",
-          }}
-        >
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              style={{
-                textAlign:
-                  msg.sender === "user"
-                    ? "right"
-                    : "left",
-                marginBottom: "10px",
-              }}
-            >
-              <div
-                style={{
-                  display: "inline-block",
-                  background:
-                    msg.sender === "user"
-                      ? "#2563eb"
-                      : "#1e293b",
-                  padding: "10px 14px",
-                  borderRadius: "14px",
-                  maxWidth: "70%",
-                }}
-              >
-                {msg.text}
-              </div>
-            </div>
-          ))}
+    <div
+      style={{
+        position: "absolute",
+        bottom: "-140px",
+        left: "-140px",
+        width: "300px",
+        height: "300px",
+        borderRadius: "50%",
+        background: "rgba(16,185,129,0.12)",
+        filter: "blur(60px)",
+      }}
+    />
 
-          <div ref={chatEndRef}></div>
-        </div>
+    {/* 🚀 Header */}
+    <div style={{ textAlign: "center", marginBottom: "25px" }}>
+  <h1
+    style={{
+      fontSize: "48px",
+      marginBottom: "8px",
+      background: "linear-gradient(90deg,#38bdf8,#8b5cf6,#ec4899)",
+      WebkitBackgroundClip: "text",
+      WebkitTextFillColor: "transparent",
+      fontWeight: "bold",
+    }}
+  >
+    🤖 Sai AI
+  </h1>
 
-        {/* ⌨️ Input */}
-        <div
-          style={{
-            display: "flex",
-            gap: "10px",
-            flexWrap: "wrap",
-          }}
-        >
-          {/* ⚡ Quick Actions */}
-<div
-  style={{
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-    marginBottom: "15px",
-  }}
->
-  <button onClick={() => setMessage("weather")}>🌤 Weather</button>
-  <button onClick={() => setMessage("time")}>🕒 Time</button>
-  <button onClick={() => setMessage("date")}>📅 Date</button>
-  <button onClick={() => setMessage("sai ai project")}>🤖 Project</button>
-  <button onClick={() => setMessage("motivate me")}>💪 Motivate</button>
-</div>
-          <input
-            type="text"
-            placeholder="Ask Tara anything..."
-            value={message}
-            onChange={(e) =>
-              setMessage(e.target.value)
-            }
-            onKeyDown={(e) => {
-              if (e.key === "Enter") sendMessage();
-            }}
-            style={{
-              flex: 1,
-              padding: "14px",
-              borderRadius: "12px",
-              border: "1px solid #334155",
-              background: "#0f172a",
-              color: "white",
-            }}
-          />
-
-          <button onClick={startListening}>
-            🎤
-          </button>
-
-          {!voiceMode ? (
-            <button
-              onClick={startVoiceMode}
-              style={{
-                background: "#16a34a",
-                color: "white",
-              }}
-            >
-              🎙️ Voice Mode
-            </button>
-          ) : (
-            <button
-              onClick={stopVoiceMode}
-              style={{
-                background: "#dc2626",
-                color: "white",
-              }}
-            >
-              ⛔ Stop
-            </button>
-          )}
-
-          <button
-            onClick={sendMessage}
-            style={{
-              background: "#2563eb",
-              color: "white",
-            }}
-          >
-            Send 🚀
-          </button>
-
-          <button
-            onClick={clearChat}
-            style={{
-              background: "#7f1d1d",
-              color: "white",
-            }}
-          >
-            🗑
-          </button>
-        </div>
-
-        {listening && (
-          <p
-            style={{
-              marginTop: "10px",
-              color: "#38bdf8",
-            }}
-          >
-            🎤 Tara is listening...
-          </p>
-        )}
-
-        {speaking && (
-          <p
-            style={{
-              marginTop: "5px",
-              color: "#facc15",
-            }}
-          >
-            🔊 Tara is speaking...
-          </p>
-        )}
-        {/* 📞 Call Simulation */}
-<div
-  style={{
-    marginTop: "24px",
-    background: "#111827",
-    borderRadius: "16px",
-    padding: "20px",
-  }}
->
-  <h3>📞 Call Simulation</h3>
+  <p style={{ color: "#94a3b8", fontSize: "18px" }}>
+    Smart Telugu Voice & Call Assistant
+  </p>
 
   <div
     style={{
-      display: "flex",
-      gap: "10px",
-      flexWrap: "wrap",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: "8px",
+      marginTop: "10px",
+      padding: "8px 14px",
+      borderRadius: "20px",
+      background: "rgba(17,24,39,0.85)",
+      backdropFilter: "blur(10px)",
+      border: "1px solid #1e293b",
+      boxShadow: "0 0 25px rgba(37,99,235,0.15)",
     }}
   >
-    <button onClick={() => simulateCall("Amma")}>
-      👩 Amma
-    </button>
+    <div
+      style={{
+        width: "10px",
+        height: "10px",
+        borderRadius: "50%",
+        background: "#22c55e",
+        boxShadow: "0 0 10px #22c55e",
+      }}
+    ></div>
 
-    <button onClick={() => simulateCall("Annayya")}>
-      👨 Annayya
-    </button>
-
-    <button onClick={() => simulateCall("Unknown Number")}>
-      ❓ Unknown
-    </button>
-
-    <button onClick={() => simulateCall("Emergency")}>
-      🚨 Emergency
-    </button>
+    <span style={{ color: "#22c55e", fontWeight: "bold" }}>
+      Tara AI Online
+    </span>
   </div>
-
-  {incomingCall && (
-    <div style={{ marginTop: "15px" }}>
-      <p>
-        📲 Incoming Call: <strong>{incomingCall}</strong>
-      </p>
-
-      <button onClick={acceptCall}>
-        ✅ Accept
-      </button>
-    </div>
-  )}
-
-  {callStatus && (
-    <div
-      style={{
-        marginTop: "15px",
-        background: "#0f172a",
-        padding: "12px",
-        borderRadius: "12px",
-      }}
-    >
-      {callStatus}
-    </div>
-  )}
-
-  {urgentAlert && (
-    <div
-      style={{
-        marginTop: "15px",
-        background: "#7f1d1d",
-        color: "#fecaca",
-        padding: "12px",
-        borderRadius: "12px",
-        fontWeight: "bold",
-      }}
-    >
-      {urgentAlert}
-    </div>
-  )}
 </div>
+
+    
+    <div
+      style={{
+        maxWidth: "980px",
+        margin: "0 auto",
+        background: "rgba(15,23,42,0.72)",
+        backdropFilter: "blur(16px)",
+        borderRadius: "28px",
+        padding: "24px",
+        border: "1px solid rgba(148,163,184,0.15)",
+        boxShadow: "0 20px 45px rgba(2,6,23,0.55)",
+        position: "relative",
+      }}
+    >
+      {/* 💬 Chat Area */}
+      <div
+        style={{
+          height: "460px",
+          overflowY: "auto",
+          background: "rgba(2,6,23,0.9)",
+          borderRadius: "22px",
+          padding: "18px",
+          marginBottom: "18px",
+          border: "1px solid rgba(148,163,184,0.08)",
+        }}
+      >
+        {messages.map((msg, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              justifyContent:
+                msg.sender === "user" ? "flex-end" : "flex-start",
+              marginBottom: "14px",
+            }}
+          >
+            <div
+              style={{
+                maxWidth: "78%",
+                padding: "14px 16px",
+                borderRadius:
+                  msg.sender === "user"
+                    ? "20px 20px 6px 20px"
+                    : "20px 20px 20px 6px",
+                background:
+                  msg.sender === "user"
+                    ? "linear-gradient(135deg, #2563eb, #1d4ed8)"
+                    : "linear-gradient(135deg, #1e293b, #0f172a)",
+                border:
+                  msg.sender === "user"
+                    ? "1px solid rgba(96,165,250,0.4)"
+                    : "1px solid rgba(148,163,184,0.12)",
+                boxShadow:
+                  msg.sender === "user"
+                    ? "0 10px 25px rgba(37,99,235,0.25)"
+                    : "0 8px 20px rgba(2,6,23,0.35)",
+              }}
+            >
+              <div style={{ whiteSpace: "pre-wrap", lineHeight: "1.6" }}>
+                {msg.text}
+              </div>
+
+              <div
+                style={{
+                  fontSize: "11px",
+                  color: "#cbd5e1",
+                  marginTop: "8px",
+                  textAlign: "right",
+                }}
+              >
+                {msg.time}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        <div ref={chatEndRef}></div>
       </div>
+
+      {/* ⚡ Quick Actions */}
+      <div
+        style={{
+          display: "flex",
+          gap: "10px",
+          flexWrap: "wrap",
+          marginBottom: "14px",
+        }}
+      >
+        {[
+          ["weather", "🌤 Weather"],
+          ["time", "🕒 Time"],
+          ["date", "📅 Date"],
+          ["sai ai project", "🤖 Project"],
+          ["motivate me", "💪 Motivate"],
+        ].map(([value, label]) => (
+          <button
+            key={value}
+            onClick={() => setMessage(value)}
+            style={{
+              padding: "10px 14px",
+              borderRadius: "14px",
+              border: "1px solid rgba(148,163,184,0.18)",
+              background: "rgba(30,41,59,0.7)",
+              color: "white",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* ⌨️ Input */}
+      <div
+        style={{
+          display: "flex",
+          gap: "12px",
+          flexWrap: "wrap",
+          alignItems: "center",
+        }}
+      >
+        <input
+          type="text"
+          placeholder="Ask Tara anything..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") sendMessage();
+          }}
+          style={{
+            flex: 1,
+            minWidth: "220px",
+            padding: "16px",
+            borderRadius: "16px",
+            border: "1px solid rgba(148,163,184,0.2)",
+            background: "rgba(2,6,23,0.85)",
+            color: "white",
+            fontSize: "15px",
+            outline: "none",
+            boxShadow: "0 0 12px rgba(59,130,246,0.2)",
+          }}
+        />
+
+        <button
+          onClick={startListening}
+          style={{
+            padding: "14px 16px",
+            borderRadius: "16px",
+            border: "none",
+            background: listening ? "#0ea5e9" : "#1e293b",
+            color: "white",
+            cursor: "pointer",
+            boxShadow: listening
+              ? "0 0 18px rgba(14,165,233,0.5)"
+              : "0 8px 18px rgba(2,6,23,0.35)",
+          }}
+        >
+          🎤
+        </button>
+
+        {!voiceMode ? (
+          <button
+            onClick={startVoiceMode}
+            style={{
+              padding: "14px 18px",
+              borderRadius: "16px",
+              border: "none",
+              background: "linear-gradient(135deg, #16a34a, #22c55e)",
+              color: "white",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 10px 24px rgba(34,197,94,0.28)",
+            }}
+          >
+            🎙️ Voice Mode
+          </button>
+        ) : (
+          <button
+            onClick={stopVoiceMode}
+            style={{
+              padding: "14px 18px",
+              borderRadius: "16px",
+              border: "none",
+              background: "linear-gradient(135deg, #dc2626, #ef4444)",
+              color: "white",
+              fontWeight: "bold",
+              cursor: "pointer",
+              boxShadow: "0 10px 24px rgba(239,68,68,0.28)",
+            }}
+          >
+            ⛔ Stop
+          </button>
+        )}
+
+        <button
+          onClick={sendMessage}
+          style={{
+            padding: "14px 18px",
+            borderRadius: "16px",
+            border: "none",
+            background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+            color: "white",
+            fontWeight: "bold",
+            cursor: "pointer",
+            boxShadow: "0 10px 24px rgba(59,130,246,0.28)",
+          }}
+        >
+          Send 🚀
+        </button>
+
+        <button
+          onClick={clearChat}
+          style={{
+            padding: "14px 16px",
+            borderRadius: "16px",
+            border: "none",
+            background: "linear-gradient(135deg, #7f1d1d, #b91c1c)",
+            color: "white",
+            cursor: "pointer",
+            boxShadow: "0 10px 24px rgba(185,28,28,0.24)",
+          }}
+        >
+          🗑
+        </button>
+      </div>
+
+      {/* 🎤 Status Effects */}
+      {listening && (
+        <div
+          style={{
+            marginTop: "14px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#38bdf8",
+            fontWeight: "bold",
+          }}
+        >
+          <span
+            style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: "#38bdf8",
+              boxShadow: "0 0 16px #38bdf8",
+            }}
+          />
+          🎤 Tara is listening...
+        </div>
+      )}
+
+      {speaking && (
+        <div
+          style={{
+            marginTop: "10px",
+            display: "flex",
+            alignItems: "center",
+            gap: "10px",
+            color: "#facc15",
+            fontWeight: "bold",
+          }}
+        >
+          <span
+            style={{
+              width: "12px",
+              height: "12px",
+              borderRadius: "50%",
+              background: "#facc15",
+              boxShadow: "0 0 16px #facc15",
+            }}
+          />
+          🔊 Tara is speaking...
+        </div>
+      )}
+
+      {/* 📞 Call Simulation */}
+      <div
+        style={{
+          marginTop: "26px",
+          background: "rgba(2,6,23,0.85)",
+          borderRadius: "22px",
+          padding: "22px",
+          border: "1px solid rgba(148,163,184,0.12)",
+        }}
+      >
+        <h3 style={{ marginBottom: "16px" }}>📞 Smart Call Simulation</h3>
+
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            ["Amma", "👩 Amma"],
+            ["Annayya", "👨 Annayya"],
+            ["Unknown Number", "❓ Unknown"],
+            ["Emergency", "🚨 Emergency"],
+          ].map(([caller, label]) => (
+            <button
+              key={caller}
+              onClick={() => simulateCall(caller)}
+              style={{
+                padding: "12px 16px",
+                borderRadius: "16px",
+                border: "1px solid rgba(148,163,184,0.18)",
+                background: "rgba(30,41,59,0.75)",
+                color: "white",
+                cursor: "pointer",
+              }}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {incomingCall && (
+          <div
+            style={{
+              marginTop: "18px",
+              padding: "16px",
+              borderRadius: "16px",
+              background: "rgba(15,23,42,0.9)",
+              border: "1px solid rgba(59,130,246,0.22)",
+            }}
+          >
+            <p style={{ marginBottom: "12px" }}>
+              📲 Incoming Call: <strong>{incomingCall}</strong>
+            </p>
+
+            <button
+              onClick={acceptCall}
+              style={{
+                padding: "12px 18px",
+                borderRadius: "14px",
+                border: "none",
+                background: "linear-gradient(135deg, #16a34a, #22c55e)",
+                color: "white",
+                fontWeight: "bold",
+                cursor: "pointer",
+              }}
+            >
+              ✅ Accept
+            </button>
+          </div>
+        )}
+
+        {callStatus && (
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "14px",
+              borderRadius: "16px",
+              background: "rgba(15,23,42,0.9)",
+              border: "1px solid rgba(148,163,184,0.12)",
+            }}
+          >
+            {callStatus}
+          </div>
+        )}
+
+                       {urgentAlert && (
+          <div
+            style={{
+              marginTop: "16px",
+              padding: "14px",
+              borderRadius: "16px",
+              background: "rgba(127,29,29,0.9)",
+              border: "1px solid rgba(248,113,113,0.35)",
+              color: "#fecaca",
+              fontWeight: "bold",
+              boxShadow: "0 0 22px rgba(248,113,113,0.22)",
+            }}
+          >
+            {urgentAlert}
+          </div>
+        )}
+      </div>
+    </div>
     </div>
   );
 }
