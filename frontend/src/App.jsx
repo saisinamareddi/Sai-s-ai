@@ -24,9 +24,7 @@ function App() {
 
     const loadHistory = async () => {
       try {
-        const response = await axios.get(
-          "${API_BASE}/history"
-        );
+        const response = await axios.get(`${API_BASE}/history`);
 
         const formatted = response.data
           .map((item) => [
@@ -179,7 +177,7 @@ function App() {
 
       try {
         const response = await axios.post(
-          "${API_BASE}/chat",
+          `${API_BASE}/chat`,
           { message: spoken }
         );
 
@@ -234,7 +232,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "${API_BASE}/chat",
+        `${API_BASE}/chat`,
         { message: userMessage }
       );
 
@@ -273,7 +271,7 @@ function App() {
 
     try {
       await axios.delete(
-        "${API_BASE}/history"
+        `${API_BASE}/history`
       );
     } catch (error) {
       console.log(error);
@@ -288,8 +286,8 @@ const simulateCall = (caller) => {
 
 const acceptCall = async () => {
   try {
-    const response = await axios.post(
-      "${API_BASE}/call-assistant",
+    const response = await axios.post
+      (`${API_BASE}/call-assistant`,
       {
         caller: incomingCall,
         reason: "family call",
