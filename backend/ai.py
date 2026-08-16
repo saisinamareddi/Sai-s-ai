@@ -16,7 +16,7 @@ print("✅ Gemini connected")
 def ask_ai(prompt: str) -> str:
     try:
         response = client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-3.6-flash",
             contents=prompt
         )
 
