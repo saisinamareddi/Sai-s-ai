@@ -282,9 +282,12 @@ function App() {
 const simulateCall = (caller) => {
   setIncomingCall(caller);
   setCallStatus("");
+  setUrgentAlert("");
 };
 
 const acceptCall = async () => {
+  setUrgentAlert("");
+
   try {
     const response = await axios.post
       (`${API_BASE}/call-assistant`,
